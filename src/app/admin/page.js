@@ -51,11 +51,43 @@ export default function AdminPage() {
     }
   }, [getAuthHeaders, router]);
 
-  useEffect(() => {
+useEffect(() => {
+    // Cette fonction interne n'est visible que par le useEffect
+    const loadDishes = async () => {
+      if (typeof window !== 'undefined' && !localStorage.getItem('userInfo')) {
+        router.push('/login');
+        return;
+      }
+      
+      try {
+        const userInfoString = localStorage.getItem('userInfo');
+        const userInfo = JSON.parse(userInfoString);
+        const headers = {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        };
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes`, { headers });
+        
+        if (response.status === 401) {
+          localStorage.removeItem('userInfo');
+          router.push('/login');
+          throw new Error('Session expirée, veuillez vous reconnecter.');
+        }
+        if (!response.ok) {
+          throw new Error('Erreur lors de la récupération des plats.');
+        }
+        const data = await response.json();
+        setDishes(data);
+      } catch (error) {
+        setMessage(`❌ ${error.message}`);
+      }
+    };
+
     if (user) {
-      fetchDishes();
+      loadDishes();
     }
-  }, [user, fetchDishes]);
+  }, [user, router]); // Les seules dépendances externes sont user et router
   
   const resetForm = () => { setName(''); setDescription(''); setPrice(''); setCategory('Plat de résistance'); setEditingDishId(null); setMessage(''); };
   
