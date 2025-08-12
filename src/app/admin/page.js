@@ -5,9 +5,9 @@ import useAuth from '@/hooks/useAuth';
 import QRCodeModal from '@/components/QRCodeModal';
 import { useRouter } from 'next/navigation';
 
-export const dynamic = 'force-dynamic'; // Dit à Next.js de ne pas pré-générer cette page
+export const dynamic = 'force-dynamic';
 
-function AdminPage() {
+export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   
@@ -164,7 +164,7 @@ function AdminPage() {
           )}
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
+            <div className="lg-col-span-1">
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20 sticky top-8 hover:shadow-2xl transition-all duration-300">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
@@ -214,5 +214,3 @@ function AdminPage() {
     </>
   );
 }
-
-export default withAuth(AdminPage);
