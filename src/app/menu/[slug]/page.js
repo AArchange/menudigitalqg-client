@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import Link from 'next/link'; // Importation de Link
+import Link from 'next/link';
 
 export default function MenuPage() {
   const params = useParams();
@@ -36,6 +36,7 @@ export default function MenuPage() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes/menu/${params.slug}`);
         if (!response.ok) {
+          // Correction de l'apostrophe ici
           throw new Error("Ce restaurant n'a pas été trouvé ou son menu n'est pas disponible.");
         }
         const data = await response.json();
@@ -116,9 +117,9 @@ export default function MenuPage() {
               </section>
             ))}
           </div>
-        ) : (<div className="text-center py-20"><div className="text-8xl mb-6 animate-bounce">🍽️</div><h2 className="text-3xl font-bold text-white mb-4">Menu en préparation</h2><p className="text-gray-400 text-lg">Ce restaurant n'a pas encore publié son menu.</p></div>)}
+        ) : (<div className="text-center py-20"><div className="text-8xl mb-6 animate-bounce">🍽️</div><h2 className="text-3xl font-bold text-white mb-4">Menu en préparation</h2><p className="text-gray-400 text-lg">Ce restaurant n&apos;a pas encore publié son menu.</p></div>)}
       </main>
-      <footer className="relative z-10 bg-gradient-to-r from-black/80 to-gray-900/80 backdrop-blur-xl border-t border-white/10"><div className="container mx-auto px-6 py-8"><div className="text-center"><div className="flex items-center justify-center space-x-2 mb-4"><div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div><p className="text-gray-300 font-medium">Menu propulsé par</p><div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse animation-delay-500"></div></div><div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">MenuDigitalQG</div><p className="text-gray-500 text-sm mt-2">L'avenir de la restauration digitale</p></div></div></footer>
+      <footer className="relative z-10 bg-gradient-to-r from-black/80 to-gray-900/80 backdrop-blur-xl border-t border-white/10"><div className="container mx-auto px-6 py-8"><div className="text-center"><div className="flex items-center justify-center space-x-2 mb-4"><div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div><p className="text-gray-300 font-medium">Menu propulsé par</p><div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse animation-delay-500"></div></div><div className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">MenuDigitalQG</div><p className="text-gray-500 text-sm mt-2">L&apos;avenir de la restauration digitale</p></div></div></footer>
       <style jsx>{` @keyframes reverse { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } } .animate-reverse { animation: reverse 1s linear infinite; } .animation-delay-500 { animation-delay: 0.5s; } .backdrop-blur-xl { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }`}</style>
     </div>
   );
