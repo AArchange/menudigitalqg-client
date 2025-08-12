@@ -8,9 +8,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // Rediriger si l'utilisateur est déjà connecté
   useEffect(() => {
     if (localStorage.getItem('userInfo')) {
       router.push('/admin');
@@ -19,6 +19,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     setMessage('Connexion en cours...');
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
@@ -35,27 +36,44 @@ export default function LoginPage() {
       }
     } catch (error) {
       setMessage(error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Connexion à votre Dashboard</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700">Email</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full p-2 border rounded" required />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/30">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl mb-4 shadow-lg">
+            <span className="text-2xl">🔑</span>
           </div>
-          <div>
-            <label className="block text-gray-700">Mot de passe</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-2 border rounded" required />
+          <h1 className="text-3xl font-bold text-white">Connexion Admin</h1>
+          <p className="text-purple-200 mt-2">Accédez à votre tableau de bord</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="group">
+            <label className="block text-sm font-semibold text-purple-200 mb-2">Email</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 border-2 border-white/30 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-300 transition-all duration-300 bg-white/20 text-white placeholder-purple-200" placeholder="votre@email.com" required />
           </div>
-          {message && <p className="text-red-500 text-center">{message}</p>}
-          <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Se connecter</button>
+          <div className="group">
+            <label className="block text-sm font-semibold text-purple-200 mb-2">Mot de passe</label>
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 border-2 border-white/30 rounded-xl focus:border-purple-400 focus:ring-2 focus:ring-purple-300 transition-all duration-300 bg-white/20 text-white placeholder-purple-200" placeholder="••••••••" required />
+          </div>
+          
+          {message && <p className="text-red-300 text-center bg-red-500/30 p-3 rounded-lg">{message}</p>}
+          
+          <button type="submit" disabled={isLoading} className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-pink-500 hover:to-purple-600 disabled:from-gray-500 disabled:to-gray-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100 transition-all duration-300 flex items-center justify-center space-x-2">
+            {isLoading ? (<div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>) : (<span>Se connecter</span>)}
+          </button>
         </form>
-        <p className="mt-4 text-center text-sm">
-          Pas encore de compte ? <Link href="/register" className="text-blue-500 hover:underline">Inscrivez-vous</Link>
+        
+        <p className="mt-6 text-center text-sm text-purple-200">
+          Pas encore de compte ?{' '}
+          <Link href="/register" className="font-semibold text-white hover:underline">
+            Inscrivez-vous ici
+          </Link>
         </p>
       </div>
     </div>

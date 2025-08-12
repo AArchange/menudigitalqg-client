@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Ajout de useCallback
 import useAuth from '@/hooks/useAuth';
 import QRCodeModal from '@/components/QRCodeModal';
 import { useRouter } from 'next/navigation';
@@ -19,7 +19,7 @@ export default function AdminPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = useCallback(() => {
     const userInfoString = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
     if (!userInfoString) {
       router.push('/login');
@@ -30,9 +30,9 @@ export default function AdminPage() {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${userInfo.token}`,
     };
-  };
+  }, [router]);
 
-  const fetchDishes = async () => {
+  const fetchDishes = useCallback(async () => {
     if (typeof window !== 'undefined' && !localStorage.getItem('userInfo')) return;
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes`, { headers: getAuthHeaders() });
@@ -49,13 +49,13 @@ export default function AdminPage() {
     } catch (error) {
       setMessage(`❌ ${error.message}`);
     }
-  };
+  }, [getAuthHeaders, router]);
 
   useEffect(() => {
     if (user) {
       fetchDishes();
     }
-  }, [user]);
+  }, [user, fetchDishes]);
   
   const resetForm = () => { setName(''); setDescription(''); setPrice(''); setCategory('Plat de résistance'); setEditingDishId(null); setMessage(''); };
   
@@ -212,3 +212,5 @@ export default function AdminPage() {
     </>
   );
 }
+
+export default withAuth(AdminPage);
