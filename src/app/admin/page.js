@@ -5,7 +5,7 @@ import useAuth from '@/hooks/useAuth';
 import QRCodeModal from '@/components/QRCodeModal';
 import { useRouter } from 'next/navigation';
 
-export default function AdminPage() {
+export  function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   
