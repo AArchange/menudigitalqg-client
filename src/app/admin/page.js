@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react'; // Ajout de useCallback
+import { useState, useEffect, useCallback } from 'react';
 import useAuth from '@/hooks/useAuth';
 import QRCodeModal from '@/components/QRCodeModal';
 import { useRouter } from 'next/navigation';
 
-export  function AdminPage() {
+function AdminPage() { // <--- Pas de "export" ici
   const { user, loading } = useAuth();
   const router = useRouter();
   
@@ -51,43 +51,12 @@ export  function AdminPage() {
     }
   }, [getAuthHeaders, router]);
 
-useEffect(() => {
-    // Cette fonction interne n'est visible que par le useEffect
-    const loadDishes = async () => {
-      if (typeof window !== 'undefined' && !localStorage.getItem('userInfo')) {
-        router.push('/login');
-        return;
-      }
-      
-      try {
-        const userInfoString = localStorage.getItem('userInfo');
-        const userInfo = JSON.parse(userInfoString);
-        const headers = {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`,
-        };
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes`, { headers });
-        
-        if (response.status === 401) {
-          localStorage.removeItem('userInfo');
-          router.push('/login');
-          throw new Error('Session expirée, veuillez vous reconnecter.');
-        }
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des plats.');
-        }
-        const data = await response.json();
-        setDishes(data);
-      } catch (error) {
-        setMessage(`❌ ${error.message}`);
-      }
-    };
-
+  // UN SEUL useEffect propre
+  useEffect(() => {
     if (user) {
-      loadDishes();
+      fetchDishes();
     }
-  }, [user, router]); // Les seules dépendances externes sont user et router
+  }, [user, fetchDishes]);
   
   const resetForm = () => { setName(''); setDescription(''); setPrice(''); setCategory('Plat de résistance'); setEditingDishId(null); setMessage(''); };
   
@@ -245,4 +214,5 @@ useEffect(() => {
   );
 }
 
+// Le SEUL et UNIQUE export default, tout à la fin
 export default withAuth(AdminPage);
