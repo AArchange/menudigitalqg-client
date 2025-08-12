@@ -5,7 +5,9 @@ import useAuth from '@/hooks/useAuth';
 import QRCodeModal from '@/components/QRCodeModal';
 import { useRouter } from 'next/navigation';
 
-function AdminPage() { // <--- Pas de "export" ici
+export const dynamic = 'force-dynamic'; // Dit à Next.js de ne pas pré-générer cette page
+
+function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   
@@ -51,7 +53,6 @@ function AdminPage() { // <--- Pas de "export" ici
     }
   }, [getAuthHeaders, router]);
 
-  // UN SEUL useEffect propre
   useEffect(() => {
     if (user) {
       fetchDishes();
@@ -214,5 +215,4 @@ function AdminPage() { // <--- Pas de "export" ici
   );
 }
 
-// Le SEUL et UNIQUE export default, tout à la fin
 export default withAuth(AdminPage);
