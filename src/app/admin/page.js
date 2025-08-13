@@ -4,22 +4,21 @@ import { useState, useEffect, useCallback } from 'react';
 import useAuth from '@/hooks/useAuth';
 import QRCodeModal from '@/components/QRCodeModal';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image'; // On importe le composant Image
+import Image from 'next/image';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminPage() {
+// On n'exporte PAS la fonction ici
+function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   
-  // États du formulaire
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('Plat de résistance');
-  const [image, setImage] = useState(''); // État pour l'URL de l'image
-
-  // États de fonctionnement
+  const [image, setImage] = useState('');
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');
   const [dishes, setDishes] = useState([]);
@@ -74,14 +73,9 @@ export default function AdminPage() {
         body: formData,
       });
       const data = await response.json();
-      if (response.ok) {
-        setImage(data.secure_url);
-      } else { throw new Error(data.error.message); }
-    } catch (error) {
-      setMessage(`❌ Erreur d'upload : ${error.message}`);
-    } finally {
-      setUploading(false);
-    }
+      if (response.ok) { setImage(data.secure_url); } else { throw new Error(data.error.message); }
+    } catch (error) { setMessage(`❌ Erreur d'upload : ${error.message}`); } 
+    finally { setUploading(false); }
   };
 
   const handleSubmit = async (e) => {
@@ -152,12 +146,18 @@ export default function AdminPage() {
         <div className="container mx-auto p-4 md:p-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
             <div className="transform hover:scale-105 transition-transform duration-300">
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">{user.restaurantName}</h1>
+              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                {user.restaurantName}
+              </h1>
               <p className="text-gray-600 mt-2">Gérez votre menu en toute simplicité</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <button onClick={handleOpenModal} disabled={!menuUrl} className="group bg-gradient-to-r from-gray-700 to-black hover:from-black hover:to-gray-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"><span className="text-2xl group-hover:animate-pulse">📱</span><span>Voir mon QR Code</span></button>
-              <button onClick={handleLogout} className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-pink-500 hover:to-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">Déconnexion</button>
+            <div className="flex items-center space-x-2 md:space-x-4">
+                <Link href="/admin/settings" className="group bg-gradient-to-r from-blue-500 to-sky-500 hover:from-sky-500 hover:to-blue-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  <span>Paramètres</span>
+                </Link>
+                <button onClick={handleOpenModal} disabled={!menuUrl} className="group bg-gradient-to-r from-gray-700 to-black hover:from-black hover:to-gray-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"><span className="text-2xl group-hover:animate-pulse">📱</span><span>Voir mon QR Code</span></button>
+                <button onClick={handleLogout} className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-pink-500 hover:to-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">Déconnexion</button>
             </div>
           </div>
           {message && (<div className={`mb-6 p-4 rounded-lg shadow-md animate-fade-in ${message.includes('✅') ? 'bg-green-100 text-green-800 border-l-4 border-green-400' : message.includes('❌') ? 'bg-red-100 text-red-800 border-l-4 border-red-400' : 'bg-blue-100 text-blue-800 border-l-4 border-blue-400'}`}><p className="font-medium">{message}</p></div>)}
@@ -211,3 +211,6 @@ export default function AdminPage() {
     </>
   );
 }
+
+// L'UNIQUE export default est ici
+export default withAuth(AdminPage);
