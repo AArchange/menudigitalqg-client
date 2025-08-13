@@ -49,6 +49,16 @@ export default function MenuPage() {
     fetchMenuData();
   }, [params.slug]);
 
+   // --- NOUVEAU useEffect pour enregistrer la vue ---
+  useEffect(() => {
+    if (params.slug) {
+      // On ne se soucie pas de la réponse, on envoie juste la requête
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/menu/${params.slug}/view`, {
+        method: 'PATCH',
+      });
+    }
+  }, [params.slug]); // Se déclenche une fois quand le slug est disponible
+
   // Appliquer la couleur du thème via des variables CSS
   useEffect(() => {
     if (restaurant && restaurant.themeColor) {
