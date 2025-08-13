@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function MenuPage() {
   const params = useParams();
@@ -10,10 +11,14 @@ export default function MenuPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [restaurantName, setRestaurantName] = useState('Menu');
 
-  const restaurantName = params.slug 
-    ? params.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-    : 'Menu';
+  useEffect(() => {
+    if (params.slug) {
+      const formattedName = params.slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      setRestaurantName(formattedName);
+    }
+  }, [params.slug]);
 
   const getCategoryIcon = (category) => {
     const icons = { 'Plat de résistance': '🍽️', 'Entrée': '🥗', 'Dessert': '🍰', 'Boisson': '🥤' };
@@ -36,7 +41,6 @@ export default function MenuPage() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes/menu/${params.slug}`);
         if (!response.ok) {
-          // Correction de l'apostrophe ici
           throw new Error("Ce restaurant n'a pas été trouvé ou son menu n'est pas disponible.");
         }
         const data = await response.json();
@@ -78,7 +82,7 @@ export default function MenuPage() {
           <div className="text-6xl mb-4">😔</div>
           <h2 className="text-2xl font-bold text-white mb-4">Oups ! Menu non trouvé</h2>
           <p className="text-red-200 mb-6">{error}</p>
-          <Link href="/" className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-pink-500 hover:to-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">🏠 Retour à l'accueil</Link>
+          <Link href="/" className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-pink-500 hover:to-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">🏠 Retour à l&apos;accueil</Link>
         </div>
       </div>
     );
@@ -103,12 +107,15 @@ export default function MenuPage() {
                 <div className="text-center mb-8"><div className={`inline-flex items-center space-x-3 px-8 py-4 bg-gradient-to-r ${getCategoryBg(category)} rounded-2xl shadow-xl border border-white/20`}><span className="text-4xl">{getCategoryIcon(category)}</span><h2 className={`text-3xl font-bold bg-gradient-to-r ${getCategoryGradient(category)} bg-clip-text text-transparent`}>{category}</h2></div></div>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {items.map((dish, index) => (
-                    <div key={dish._id} className={`group bg-gradient-to-br ${getCategoryBg(category)} backdrop-blur-sm border border-white/20 rounded-3xl p-6 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-500 hover:-translate-y-2 ${!dish.isAvailable ? 'opacity-40 saturate-50' : ''}`} style={{animationDelay: `${index * 100}ms`}}>
-                      <div className="flex items-start justify-between mb-4"><div className="flex-1"><div className="flex items-center space-x-2 mb-2"><div className={`w-3 h-3 bg-gradient-to-r ${getCategoryGradient(category)} rounded-full`}></div><h3 className="text-xl font-bold text-gray-800 group-hover:text-gray-900 transition-colors">{dish.name}</h3></div>{dish.description && (<p className="text-gray-600 leading-relaxed mb-4 group-hover:text-gray-700 transition-colors">{dish.description}</p>)}</div></div>
-                      <div className="flex items-center justify-between">
-                        <div className={`px-4 py-2 bg-gradient-to-r ${getCategoryGradient(category)} text-white rounded-xl shadow-lg`}><span className="text-2xl font-bold">{dish.price}</span><span className="text-sm ml-1">FCFA</span></div>
-                        {!dish.isAvailable && (<div className="px-3 py-1 bg-red-600/80 backdrop-blur-sm border border-white/20 text-white rounded-lg text-sm font-semibold">Épuisé</div>)}
-                        <div className="text-2xl opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">{getCategoryIcon(category)}</div>
+                    <div key={dish._id} className={`group bg-gradient-to-br ${getCategoryBg(category)} backdrop-blur-sm border border-white/20 rounded-3xl shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-500 hover:-translate-y-2 overflow-hidden ${!dish.isAvailable ? 'opacity-40 saturate-50' : ''}`} style={{animationDelay: `${index * 100}ms`}}>
+                      {dish.image && (<div className="relative h-48"><Image src={dish.image} alt={dish.name} layout="fill" objectFit="cover" className="group-hover:scale-110 transition-transform duration-500" /></div>)}
+                      <div className="p-6">
+                        <div className="flex items-start justify-between mb-4"><div className="flex-1"><div className="flex items-center space-x-2 mb-2"><div className={`w-3 h-3 bg-gradient-to-r ${getCategoryGradient(category)} rounded-full`}></div><h3 className="text-xl font-bold text-gray-800 group-hover:text-gray-900 transition-colors">{dish.name}</h3></div>{dish.description && (<p className="text-gray-600 leading-relaxed mb-4 group-hover:text-gray-700 transition-colors">{dish.description}</p>)}</div></div>
+                        <div className="flex items-center justify-between">
+                          <div className={`px-4 py-2 bg-gradient-to-r ${getCategoryGradient(category)} text-white rounded-xl shadow-lg`}><span className="text-2xl font-bold">{dish.price}</span><span className="text-sm ml-1">FCFA</span></div>
+                          {!dish.isAvailable && (<div className="px-3 py-1 bg-red-600/80 backdrop-blur-sm border border-white/20 text-white rounded-lg text-sm font-semibold">Épuisé</div>)}
+                          <div className="text-2xl opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300">{getCategoryIcon(category)}</div>
+                        </div>
                       </div>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 rounded-3xl"></div>
                     </div>
