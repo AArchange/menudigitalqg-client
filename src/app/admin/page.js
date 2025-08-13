@@ -210,17 +210,99 @@ export default function AdminPage() {
             <div className="lg:col-span-1">
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20 sticky top-8 hover:shadow-2xl transition-all duration-300">
                 <div className="flex items-center space-x-3 mb-6"><div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div><h2 className="text-2xl font-bold text-gray-800">{editingDishId ? '✏️ Modifier le plat' : '➕ Nouveau plat'}</h2></div>
-                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="group"><label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">🏷️ Nom du plat</label><input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm" placeholder="Ex: Poulet braisé aux légumes" required /></div>
-                  <div className="group"><label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">📝 Description</label><textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm min-h-[100px] resize-none" placeholder="Décrivez votre plat délicieux..."/></div>
-                  <div className="group"><label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">💰 Prix (FCFA)</label><input type="number" id="price" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm" placeholder="2500" required /></div>
-                  <div className="group"><label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">🗂️ Catégorie</label><select id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm"><option value="Plat de résistance">🍽️ Plat de résistance</option><option value="Entrée">🥗 Entrée</option><option value="Dessert">🍰 Dessert</option><option value="Boisson">🥤 Boisson</option></select></div>
-                  <div className="group"><label htmlFor="image-file" className="block text-sm font-semibold text-gray-700 mb-2">📸 Image du plat</label>{image && (<div className="mb-2"><Image src={image} alt="Aperçu" width={100} height={100} className="rounded-lg object-cover" /></div>)}<input type="text" value={image} onChange={(e) => setImage(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl mb-2 bg-gray-50" placeholder="URL auto-remplie" readOnly /><input type="file" id="image-file" onChange={uploadFileHandler} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"/>{uploading && <div className="mt-2 text-sm text-gray-500">Téléversement en cours...</div>}</div>
-                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
-                    <button type="submit" disabled={isLoading} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-purple-500 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100 transition-all duration-300 flex items-center justify-center space-x-2">{isLoading ? (<><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Traitement...</span></>) : (<><span>{editingDishId ? '📝' : '➕'}</span><span>{editingDishId ? 'Mettre à jour' : 'Ajouter le plat'}</span></>)}</button>
-                    {editingDishId && (<button type="button" onClick={resetForm} className="flex-1 sm:flex-none bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"><span>❌</span><span>Annuler</span></button>)}
-                  </div>
-                </form>
+               <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="group">
+                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">🏷️ Nom du plat</label>
+                  <input 
+                    type="text" 
+                    id="name" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder:text-gray-400" // <-- CORRECTION ICI
+                    placeholder="Ex: Poulet braisé aux légumes"
+                    required 
+                  />
+                </div>
+
+                <div className="group">
+                  <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">📝 Description</label>
+                  <textarea 
+                    id="description" 
+                    value={description} 
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm min-h-[100px] resize-none text-gray-900 placeholder:text-gray-400" // <-- CORRECTION ICI
+                    placeholder="Décrivez votre plat délicieux..."
+                  />
+                </div>
+
+                <div className="group">
+                  <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">💰 Prix (FCFA)</label>
+                  <input 
+                    type="number" 
+                    id="price" 
+                    value={price} 
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder:text-gray-400" // <-- CORRECTION ICI
+                    placeholder="2500"
+                    required 
+                  />
+                </div>
+
+                <div className="group">
+                  <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">🗂️ Catégorie</label>
+                  <select 
+                    id="category" 
+                    value={category} 
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900" // <-- CORRECTION ICI
+                  >
+                    <option value="Plat de résistance">🍽️ Plat de résistance</option>
+                    <option value="Entrée">🥗 Entrée</option>
+                    <option value="Dessert">🍰 Dessert</option>
+                    <option value="Boisson">🥤 Boisson</option>
+                  </select>
+                </div>
+
+                <div className="group">
+                  <label htmlFor="image-file" className="block text-sm font-semibold text-gray-700 mb-2">📸 Image du plat</label>
+                  {image && (<div className="mb-2"><Image src={image} alt="Aperçu" width={100} height={100} className="rounded-lg object-cover" /></div>)}
+                  <input 
+                    type="text" 
+                    value={image} 
+                    onChange={(e) => setImage(e.target.value)} 
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl mb-2 bg-gray-50 text-gray-500 placeholder:text-gray-400" 
+                    placeholder="URL auto-remplie" 
+                    readOnly 
+                  />
+                  <input 
+                    type="file" 
+                    id="image-file" 
+                    onChange={uploadFileHandler}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
+                  />
+                  {uploading && <div className="mt-2 text-sm text-gray-500">Téléversement en cours...</div>}
+                </div>
+
+                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+                  <button type="submit" disabled={isLoading} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-purple-500 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100 transition-all duration-300 flex items-center justify-center space-x-2">
+                    {isLoading ? (
+                      <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Traitement...</span></>
+                    ) : (
+                      <><span>{editingDishId ? '📝' : '➕'}</span><span>{editingDishId ? 'Mettre à jour' : 'Ajouter le plat'}</span></>
+                    )}
+                  </button>
+                  {editingDishId && (
+                    <button 
+                      type="button" 
+                      onClick={resetForm}
+                      className="flex-1 sm:flex-none bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
+                    >
+                      <span>❌</span>
+                      <span>Annuler</span>
+                    </button>
+                  )}
+                </div>
+              </form>
               </div>
             </div>
             <div className="lg:col-span-2">
