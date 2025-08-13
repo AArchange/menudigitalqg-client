@@ -20,6 +20,7 @@ export default function AdminPage() {
   const [editingDishId, setEditingDishId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [menuUrl, setMenuUrl] = useState(''); // État pour stocker l'URL complète
 
   const getAuthHeaders = useCallback(() => {
     const userInfoString = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
@@ -56,6 +57,10 @@ export default function AdminPage() {
   useEffect(() => {
     if (user) {
       fetchDishes();
+      // On construit l'URL du menu une fois que 'user' est disponible
+      if (user.restaurantSlug && typeof window !== 'undefined') {
+        setMenuUrl(`${window.location.origin}/menu/${user.restaurantSlug}`);
+      }
     }
   }, [user, fetchDishes]);
   
@@ -109,7 +114,11 @@ export default function AdminPage() {
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
   
-  const menuUrl = user ? (typeof window !== 'undefined' ? `${window.location.origin}/menu/${user.restaurantSlug}` : '') : '';
+  const handleOpenModal = () => {
+    if (menuUrl) { // On ouvre seulement si l'URL est prête
+      setIsModalOpen(true);
+    }
+  };
 
   if (loading || !user) {
     return (
@@ -138,8 +147,9 @@ export default function AdminPage() {
             </div>
             <div className="flex items-center space-x-4">
                 <button 
-                  onClick={() => setIsModalOpen(true)}
-                  className="group bg-gradient-to-r from-gray-700 to-black hover:from-black hover:to-gray-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2"
+                  onClick={handleOpenModal}
+                  disabled={!menuUrl} // On désactive le bouton si l'URL n'est pas prête
+                  className="group bg-gradient-to-r from-gray-700 to-black hover:from-black hover:to-gray-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="text-2xl group-hover:animate-pulse">📱</span>
                   <span>Voir mon QR Code</span>
@@ -164,7 +174,7 @@ export default function AdminPage() {
           )}
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg-col-span-1">
+            <div className="lg:col-span-1">
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20 sticky top-8 hover:shadow-2xl transition-all duration-300">
                 <div className="flex items-center space-x-3 mb-6">
                   <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
