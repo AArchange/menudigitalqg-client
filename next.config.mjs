@@ -1,10 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
     ignoreDuringBuilds: true,
+  },
+  // On ajoute cette nouvelle section pour les images
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/dwaghs8g4/**', // Important: Remplace dwaghs8g4 par TON Cloud Name
+      },
+    ],
   },
 };
 
 export default nextConfig;
+
