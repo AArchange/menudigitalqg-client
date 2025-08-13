@@ -9,8 +9,7 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-// On n'exporte PAS la fonction ici
-function AdminPage() {
+export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   
@@ -29,20 +28,34 @@ function AdminPage() {
 
   const getAuthHeaders = useCallback(() => {
     const userInfoString = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
-    if (!userInfoString) { router.push('/login'); return {}; }
+    if (!userInfoString) {
+      router.push('/login');
+      return {};
+    }
     const userInfo = JSON.parse(userInfoString);
-    return { 'Content-Type': 'application/json', Authorization: `Bearer ${userInfo.token}` };
+    return {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${userInfo.token}`,
+    };
   }, [router]);
 
   const fetchDishes = useCallback(async () => {
     if (typeof window !== 'undefined' && !localStorage.getItem('userInfo')) return;
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes`, { headers: getAuthHeaders() });
-      if (response.status === 401) { localStorage.removeItem('userInfo'); router.push('/login'); throw new Error('Session expirée, veuillez vous reconnecter.'); }
-      if (!response.ok) { throw new Error('Erreur lors de la récupération des plats.'); }
+      if (response.status === 401) {
+        localStorage.removeItem('userInfo');
+        router.push('/login');
+        throw new Error('Session expirée, veuillez vous reconnecter.');
+      }
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des plats.');
+      }
       const data = await response.json();
       setDishes(data);
-    } catch (error) { setMessage(`❌ ${error.message}`); }
+    } catch (error) {
+      setMessage(`❌ ${error.message}`);
+    }
   }, [getAuthHeaders, router]);
 
   useEffect(() => {
@@ -73,9 +86,17 @@ function AdminPage() {
         body: formData,
       });
       const data = await response.json();
-      if (response.ok) { setImage(data.secure_url); } else { throw new Error(data.error.message); }
-    } catch (error) { setMessage(`❌ Erreur d'upload : ${error.message}`); } 
-    finally { setUploading(false); }
+      if (response.ok) {
+        setImage(data.secure_url);
+        setMessage('✅ Image téléversée !');
+      } else {
+        throw new Error(data.error.message);
+      }
+    } catch (error) {
+      setMessage(`❌ Erreur d'upload : ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -88,10 +109,19 @@ function AdminPage() {
     try {
       const response = await fetch(url, { method, headers: getAuthHeaders(), body: JSON.stringify(dishData) });
       const result = await response.json();
-      if (response.ok) { setMessage(`✅ Plat "${result.name}" ${editingDishId ? 'mis à jour' : 'ajouté'} !`); resetForm(); fetchDishes(); setTimeout(() => setMessage(''), 3000); } 
-      else { throw new Error(result.message); }
-    } catch (error) { setMessage(`❌ Erreur : ${error.message}`); } 
-    finally { setIsLoading(false); }
+      if (response.ok) {
+        setMessage(`✅ Plat "${result.name}" ${editingDishId ? 'mis à jour' : 'ajouté'} !`);
+        resetForm();
+        fetchDishes();
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      setMessage(`❌ Erreur : ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = async (dishId) => {
@@ -99,17 +129,30 @@ function AdminPage() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes/${dishId}`, { method: 'DELETE', headers: getAuthHeaders() });
         const data = await response.json();
-        if (response.ok) { setMessage(`✅ ${data.message}`); fetchDishes(); setTimeout(() => setMessage(''), 3000); } 
-        else { throw new Error(data.message); }
-      } catch (error) { setMessage(`❌ Erreur : ${error.message}`); }
+        if (response.ok) {
+          setMessage(`✅ ${data.message}`);
+          fetchDishes();
+          setTimeout(() => setMessage(''), 3000);
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (error) {
+        setMessage(`❌ Erreur : ${error.message}`);
+      }
     }
   };
 
   const handleToggleAvailable = async (dishId) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes/${dishId}/toggle`, { method: 'PATCH', headers: getAuthHeaders() });
-      if (response.ok) { fetchDishes(); } else { throw new Error('Erreur de statut'); }
-    } catch (error) { setMessage(`❌ Erreur : ${error.message}`); }
+      if (response.ok) {
+        fetchDishes();
+      } else {
+        throw new Error('Erreur de statut');
+      }
+    } catch (error) {
+      setMessage(`❌ Erreur : ${error.message}`);
+    }
   };
   
   const getCategoryIcon = (category) => {
@@ -123,7 +166,9 @@ function AdminPage() {
   };
   
   const handleOpenModal = () => {
-    if (menuUrl) { setIsModalOpen(true); }
+    if (menuUrl) {
+      setIsModalOpen(true);
+    }
   };
 
   if (loading || !user) {
@@ -211,6 +256,3 @@ function AdminPage() {
     </>
   );
 }
-
-// L'UNIQUE export default est ici
-export default withAuth(AdminPage);
