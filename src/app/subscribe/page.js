@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default function SubscribePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -36,7 +38,6 @@ export default function SubscribePage() {
       const data = await verifyResponse.json();
       if (verifyResponse.ok) {
         alert('Abonnement activé avec succès ! Vous allez être redirigé.');
-        // Rafraîchir les infos utilisateur dans localStorage
         const updatedUserInfo = { ...JSON.parse(localStorage.getItem('userInfo')), ...data.user };
         localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
         router.push('/admin');
@@ -60,10 +61,7 @@ export default function SubscribePage() {
       key: process.env.NEXT_PUBLIC_KKIAPAY_PUBLIC_KEY,
       sandbox: process.env.NEXT_PUBLIC_KKIAPAY_SANDBOX_ENABLED === 'true',
       email: user.email,
-      callback: (response) => {
-        // kkiapay appelle cette fonction après la transaction
-        handlePaymentSuccess(response);
-      }
+      callback: handlePaymentSuccess
     });
   };
 
@@ -75,7 +73,7 @@ export default function SubscribePage() {
     <>
       <Script 
         src="https://cdn.kkiapay.me/k.js" 
-        onLoad={() => setKkiapayLoaded(true)} // On sait quand le script est prêt
+        onLoad={() => setKkiapayLoaded(true)}
       />
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-100 flex items-center justify-center p-4">
