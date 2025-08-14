@@ -28,22 +28,23 @@ export default function AdminPage() {
 
   const getAuthHeaders = useCallback(() => {
     const userInfoString = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
-    if (!userInfoString) {
-      router.push('/login');
-      return {};
-    }
+    if (!userInfoString) { router.push('/login'); return {}; }
     const userInfo = JSON.parse(userInfoString);
-    return {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${userInfo.token}`,
-    };
+    return { 'Content-Type': 'application/json', Authorization: `Bearer ${userInfo.token}` };
   }, [router]);
 
   const fetchDishes = useCallback(async () => {
     if (typeof window !== 'undefined' && !localStorage.getItem('userInfo')) return;
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dishes`, { headers: getAuthHeaders() });
-      if (response.status === 401) {
+      
+      // --- LA CORRECTION CRUCIALE EST ICI ---
+      if (response.status === 403) { // 403 Forbidden = Problème d'abonnement
+        router.push('/subscribe'); // On redirige immédiatement
+        return; // On arrête l'exécution de la fonction
+      }
+
+      if (response.status === 401) { // 401 Unauthorized = Problème de token
         localStorage.removeItem('userInfo');
         router.push('/login');
         throw new Error('Session expirée, veuillez vous reconnecter.');
@@ -205,162 +206,67 @@ export default function AdminPage() {
                 <button onClick={handleLogout} className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-pink-500 hover:to-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">Déconnexion</button>
             </div>
           </div>
-         {user && user.subscriptionStatus !== 'actif' && (
-            <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 border-l-4 border-yellow-400 rounded-lg shadow-md">
-              <p className="font-bold">Votre compte est limité ou votre abonnement a expiré.</p>
-              <p>
-                {/* LA CORRECTION EST ICI */}
-                Veuillez choisir un plan d&apos;abonnement pour débloquer toutes les fonctionnalités.
-                <Link href="/subscribe" className="font-semibold underline ml-2 hover:text-yellow-900">
-                  S&apos;abonner maintenant
-                </Link>
-              </p>
-            </div>
-          )}
           {message && (<div className={`mb-6 p-4 rounded-lg shadow-md animate-fade-in ${message.includes('✅') ? 'bg-green-100 text-green-800 border-l-4 border-green-400' : message.includes('❌') ? 'bg-red-100 text-red-800 border-l-4 border-red-400' : 'bg-blue-100 text-blue-800 border-l-4 border-blue-400'}`}><p className="font-medium">{message}</p></div>)}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
               <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20 sticky top-8 hover:shadow-2xl transition-all duration-300">
                 <div className="flex items-center space-x-3 mb-6"><div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div><h2 className="text-2xl font-bold text-gray-800">{editingDishId ? '✏️ Modifier le plat' : '➕ Nouveau plat'}</h2></div>
-               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="group">
-                  <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">🏷️ Nom du plat</label>
-                  <input 
-                    type="text" 
-                    id="name" 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder:text-gray-400" // <-- CORRECTION ICI
-                    placeholder="Ex: Poulet braisé aux légumes"
-                    required 
-                  />
-                </div>
-
-                <div className="group">
-                  <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">📝 Description</label>
-                  <textarea 
-                    id="description" 
-                    value={description} 
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm min-h-[100px] resize-none text-gray-900 placeholder:text-gray-400" // <-- CORRECTION ICI
-                    placeholder="Décrivez votre plat délicieux..."
-                  />
-                </div>
-
-                <div className="group">
-                  <label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">💰 Prix (FCFA)</label>
-                  <input 
-                    type="number" 
-                    id="price" 
-                    value={price} 
-                    onChange={(e) => setPrice(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder:text-gray-400" // <-- CORRECTION ICI
-                    placeholder="2500"
-                    required 
-                  />
-                </div>
-
-                <div className="group">
-                  <label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">🗂️ Catégorie</label>
-                  <select 
-                    id="category" 
-                    value={category} 
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900" // <-- CORRECTION ICI
-                  >
-                    <option value="Plat de résistance">🍽️ Plat de résistance</option>
-                    <option value="Entrée">🥗 Entrée</option>
-                    <option value="Dessert">🍰 Dessert</option>
-                    <option value="Boisson">🥤 Boisson</option>
-                  </select>
-                </div>
-
-                <div className="group">
-                  <label htmlFor="image-file" className="block text-sm font-semibold text-gray-700 mb-2">📸 Image du plat</label>
-                  {image && (<div className="mb-2"><Image src={image} alt="Aperçu" width={100} height={100} className="rounded-lg object-cover" /></div>)}
-                  <input 
-                    type="text" 
-                    value={image} 
-                    onChange={(e) => setImage(e.target.value)} 
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl mb-2 bg-gray-50 text-gray-500 placeholder:text-gray-400" 
-                    placeholder="URL auto-remplie" 
-                    readOnly 
-                  />
-                  <input 
-                    type="file" 
-                    id="image-file" 
-                    onChange={uploadFileHandler}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                  />
-                  {uploading && <div className="mt-2 text-sm text-gray-500">Téléversement en cours...</div>}
-                </div>
-
-                <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
-                  <button type="submit" disabled={isLoading} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-purple-500 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100 transition-all duration-300 flex items-center justify-center space-x-2">
-                    {isLoading ? (
-                      <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Traitement...</span></>
-                    ) : (
-                      <><span>{editingDishId ? '📝' : '➕'}</span><span>{editingDishId ? 'Mettre à jour' : 'Ajouter le plat'}</span></>
-                    )}
-                  </button>
-                  {editingDishId && (
-                    <button 
-                      type="button" 
-                      onClick={resetForm}
-                      className="flex-1 sm:flex-none bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"
-                    >
-                      <span>❌</span>
-                      <span>Annuler</span>
-                    </button>
-                  )}
-                </div>
-              </form>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="group"><label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">🏷️ Nom du plat</label><input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder:text-gray-400" placeholder="Ex: Poulet braisé aux légumes" required /></div>
+                  <div className="group"><label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">📝 Description</label><textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm min-h-[100px] resize-none text-gray-900 placeholder:text-gray-400" placeholder="Décrivez votre plat délicieux..."/></div>
+                  <div className="group"><label htmlFor="price" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">💰 Prix (FCFA)</label><input type="number" id="price" value={price} onChange={(e) => setPrice(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900 placeholder:text-gray-400" placeholder="2500" required /></div>
+                  <div className="group"><label htmlFor="category" className="block text-sm font-semibold text-gray-700 mb-2 group-focus-within:text-indigo-600 transition-colors">🗂️ Catégorie</label><select id="category" value={category} onChange={(e) => setCategory(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-300 bg-white/70 backdrop-blur-sm text-gray-900"><option value="Plat de résistance">🍽️ Plat de résistance</option><option value="Entrée">🥗 Entrée</option><option value="Dessert">🍰 Dessert</option><option value="Boisson">🥤 Boisson</option></select></div>
+                  <div className="group"><label htmlFor="image-file" className="block text-sm font-semibold text-gray-700 mb-2">📸 Image du plat</label>{image && (<div className="mb-2"><Image src={image} alt="Aperçu" width={100} height={100} className="rounded-lg object-cover" /></div>)}<input type="text" value={image} onChange={(e) => setImage(e.target.value)} className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl mb-2 bg-gray-50 text-gray-500 placeholder:text-gray-400" placeholder="URL auto-remplie" readOnly /><input type="file" id="image-file" onChange={uploadFileHandler} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"/>{uploading && <div className="mt-2 text-sm text-gray-500">Téléversement en cours...</div>}</div>
+                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
+                    <button type="submit" disabled={isLoading} className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-purple-500 hover:to-indigo-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 disabled:hover:scale-100 transition-all duration-300 flex items-center justify-center space-x-2">{isLoading ? (<><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Traitement...</span></>) : (<><span>{editingDishId ? '📝' : '➕'}</span><span>{editingDishId ? 'Mettre à jour' : 'Ajouter le plat'}</span></>)}</button>
+                    {editingDishId && (<button type="button" onClick={resetForm} className="flex-1 sm:flex-none bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"><span>❌</span><span>Annuler</span></button>)}
+                  </div>
+                </form>
               </div>
             </div>
-            <div className="lg:col-span-2">
-              <div className="flex items-center space-x-3 mb-6"><div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div><h2 className="text-3xl font-bold text-gray-800">📋 Menu Actuel</h2><div className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">{dishes.length} plat{dishes.length > 1 ? 's' : ''}</div></div>
-              {/* Carte de Statistiques */}
-              <div className="mb-6">
-                  <h2 className="text-3xl font-bold text-gray-800 mb-4">📊 Statistiques</h2>
-                  <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20">
-                      <div className="flex items-center space-x-4">
-                          <div className="bg-gradient-to-r from-cyan-400 to-blue-500 p-4 rounded-xl shadow-lg">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                              </svg>
-                          </div>
-                          <div>
-                              <p className="text-gray-500 font-semibold">Vues du menu (Total)</p>
-                              <p className="text-4xl font-bold text-gray-800">
-                                  {user.menuViewCount !== undefined ? user.menuViewCount : 'N/A'}
-                              </p>
-                          </div>
-                      </div>
+            <div className="lg:col-span-2 space-y-8">
+              <div>
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></div>
+                  <h2 className="text-3xl font-bold text-gray-800">📊 Statistiques</h2>
+                </div>
+                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-gradient-to-r from-cyan-400 to-blue-500 p-4 rounded-xl shadow-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 font-semibold">Vues du menu (Total)</p>
+                      <p className="text-4xl font-bold text-gray-800">{user.menuViewCount !== undefined ? user.menuViewCount : 'N/A'}</p>
+                    </div>
                   </div>
+                </div>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
-                {dishes.length > 0 ? (
-                  <div className="space-y-4">
-                    {dishes.map((dish, index) => (
-                      <div key={dish._id} className={`group bg-gradient-to-r from-white/90 to-gray-50/90 backdrop-blur-sm border-2 border-gray-100 hover:border-indigo-200 rounded-xl p-6 shadow-sm hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 ${!dish.isAvailable ? 'opacity-40' : ''}`} style={{animationDelay: `${index * 100}ms`}}>
-                        <div className="flex flex-col sm:flex-row justify-between items-start">
-                          {dish.image && (<div className="w-full sm:w-24 h-24 mr-0 sm:mr-6 mb-4 sm:mb-0 flex-shrink-0"><Image src={dish.image} alt={dish.name} width={96} height={96} className="rounded-lg object-cover w-full h-full shadow-md" /></div>)}
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2"><span className="text-2xl">{getCategoryIcon(dish.category)}</span><h3 className="text-xl font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">{dish.name}</h3><span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(dish.category)}`}>{dish.category}</span></div>
-                            <p className="text-gray-600 mb-3 leading-relaxed">{dish.description || "Aucune description disponible"}</p>
-                            <div className="flex items-center space-x-2"><span className="text-2xl font-bold text-green-600">{dish.price}</span><span className="text-sm text-gray-500 font-semibold">FCFA</span></div>
-                          </div>
-                          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 ml-0 sm:ml-6 mt-4 sm:mt-0">
-                            <label htmlFor={`toggle-${dish._id}`} className="flex items-center cursor-pointer" title={dish.isAvailable ? 'Disponible' : 'Épuisé'}><div className="relative"><input type="checkbox" id={`toggle-${dish._id}`} className="sr-only" checked={dish.isAvailable} onChange={() => handleToggleAvailable(dish._id)} /><div className={`block w-14 h-8 rounded-full transition-colors duration-300 ${dish.isAvailable ? 'bg-green-500' : 'bg-gray-400'}`}></div><div className="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform"></div></div></label>
-                            <button onClick={() => handleEdit(dish)} className="w-full sm:w-auto bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-yellow-400 hover:to-amber-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"><span>✏️</span><span>Modifier</span></button>
-                            <button onClick={() => handleDelete(dish._id)} className="w-full sm:w-auto bg-gradient-to-r from-red-500 to-pink-600 hover:from-pink-500 hover:to-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"><span>🗑️</span><span>Supprimer</span></button>
+              <div>
+                <div className="flex items-center space-x-3 mb-6"><div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div><h2 className="text-3xl font-bold text-gray-800">📋 Menu Actuel</h2><div className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-semibold">{dishes.length} plat{dishes.length > 1 ? 's' : ''}</div></div>
+                <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
+                  {dishes.length > 0 ? (
+                    <div className="space-y-4">
+                      {dishes.map((dish, index) => (
+                        <div key={dish._id} className={`group bg-gradient-to-r from-white/90 to-gray-50/90 backdrop-blur-sm border-2 border-gray-100 hover:border-indigo-200 rounded-xl p-6 shadow-sm hover:shadow-lg transform hover:scale-[1.02] transition-all duration-300 ${!dish.isAvailable ? 'opacity-40' : ''}`} style={{animationDelay: `${index * 100}ms`}}>
+                          <div className="flex flex-col sm:flex-row justify-between items-start">
+                            {dish.image && (<div className="w-full sm:w-24 h-24 mr-0 sm:mr-6 mb-4 sm:mb-0 flex-shrink-0"><Image src={dish.image} alt={dish.name} width={96} height={96} className="rounded-lg object-cover w-full h-full shadow-md" /></div>)}
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-3 mb-2"><span className="text-2xl">{getCategoryIcon(dish.category)}</span><h3 className="text-xl font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">{dish.name}</h3><span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(dish.category)}`}>{dish.category}</span></div>
+                              <p className="text-gray-600 mb-3 leading-relaxed">{dish.description || "Aucune description disponible"}</p>
+                              <div className="flex items-center space-x-2"><span className="text-2xl font-bold text-green-600">{dish.price}</span><span className="text-sm text-gray-500 font-semibold">FCFA</span></div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-2 ml-0 sm:ml-6 mt-4 sm:mt-0">
+                              <label htmlFor={`toggle-${dish._id}`} className="flex items-center cursor-pointer" title={dish.isAvailable ? 'Disponible' : 'Épuisé'}><div className="relative"><input type="checkbox" id={`toggle-${dish._id}`} className="sr-only" checked={dish.isAvailable} onChange={() => handleToggleAvailable(dish._id)} /><div className={`block w-14 h-8 rounded-full transition-colors duration-300 ${dish.isAvailable ? 'bg-green-500' : 'bg-gray-400'}`}></div><div className="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform"></div></div></label>
+                              <button onClick={() => handleEdit(dish)} className="w-full sm:w-auto bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-yellow-400 hover:to-amber-500 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"><span>✏️</span><span>Modifier</span></button>
+                              <button onClick={() => handleDelete(dish._id)} className="w-full sm:w-auto bg-gradient-to-r from-red-500 to-pink-600 hover:from-pink-500 hover:to-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center justify-center space-x-2"><span>🗑️</span><span>Supprimer</span></button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (<div className="text-center py-12"><div className="text-6xl mb-4">🍽️</div><p className="text-xl text-gray-500 font-semibold mb-2">Aucun plat dans le menu</p><p className="text-gray-400">Commencez par ajouter votre premier plat !</p></div>)}
+                      ))}
+                    </div>
+                  ) : (<div className="text-center py-12"><div className="text-6xl mb-4">🍽️</div><p className="text-xl text-gray-500 font-semibold mb-2">Aucun plat dans le menu</p><p className="text-gray-400">Commencez par ajouter votre premier plat !</p></div>)}
+                </div>
               </div>
             </div>
           </div>
