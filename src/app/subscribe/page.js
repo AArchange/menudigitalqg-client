@@ -12,7 +12,6 @@ export default function SubscribePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState('mensuel');
-  const [kkiapayLoaded, setKkiapayLoaded] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -28,7 +27,7 @@ export default function SubscribePage() {
 
   const handlePaymentSuccess = async (response) => {
     setPaymentLoading(true);
-    setMessage('Vérification du paiement...');
+    setMessage('Vérification du paiement en cours...');
     try {
       const verifyResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/payments/verify`, {
         method: 'POST',
@@ -52,29 +51,36 @@ export default function SubscribePage() {
   };
 
   const openKkiapayWidget = () => {
-    if (!kkiapayLoaded || !user) {
-      setMessage("Le service de paiement n'est pas prêt. Veuillez réessayer.");
-      return;
+    // CORRECTION : On vérifie directement si la fonction kkiapay existe
+    if (typeof window.kkiapay === 'function' && user) {
+      window.kkiapay.open({
+        amount: plans[selectedPlan].amount,
+        key: process.env.NEXT_PUBLIC_KKIAPAY_PUBLIC_KEY,
+        sandbox: process.env.NEXT_PUBLIC_KKIAPAY_SANDBOX_ENABLED === 'true',
+        email: user.email,
+        callback: (response) => {
+          console.log(response); // Pour le débogage
+          handlePaymentSuccess(response);
+        },
+        // Ajout de la fermeture pour gérer les annulations
+        onClose: () => {
+          console.log('Widget fermé par l\'utilisateur');
+          setMessage('');
+        }
+      });
+    } else {
+      setMessage("Le service de paiement n'est pas prêt. Veuillez patienter un instant et réessayer.");
     }
-    window.kkiapay.open({
-      amount: plans[selectedPlan].amount,
-      key: process.env.NEXT_PUBLIC_KKIAPAY_PUBLIC_KEY,
-      sandbox: process.env.NEXT_PUBLIC_KKIAPAY_SANDBOX_ENABLED === 'true',
-      email: user.email,
-      callback: handlePaymentSuccess
-    });
   };
 
   if (loading || !user) {
-    return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Chargement des informations utilisateur...</div>;
   }
   
   return (
     <>
-      <Script 
-        src="https://cdn.kkiapay.me/k.js" 
-        onLoad={() => setKkiapayLoaded(true)}
-      />
+      {/* Le script se charge en arrière-plan, sans `onLoad` */}
+      <Script src="https://cdn.kkiapay.me/k.js" />
 
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-100 flex items-center justify-center p-4">
         <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
@@ -98,11 +104,11 @@ export default function SubscribePage() {
           <div className="mt-8">
             <button
               onClick={openKkiapayWidget}
-              disabled={!kkiapayLoaded || paymentLoading}
+              disabled={paymentLoading}
               className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-orange-400 hover:to-yellow-400 disabled:from-gray-400 text-black font-bold py-4 px-6 rounded-lg text-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2"
             >
               {paymentLoading ? (
-                <div className="w-6 h-6 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                <><div className="w-6 h-6 border-2 border-black/30 border-t-black rounded-full animate-spin"></div><span>Vérification...</span></>
               ) : (
                 <span>Payer avec Kkiapay</span>
               )}
