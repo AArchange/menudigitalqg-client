@@ -205,6 +205,18 @@ export default function AdminPage() {
                 <button onClick={handleLogout} className="bg-gradient-to-r from-red-500 to-pink-600 hover:from-pink-500 hover:to-red-600 text-white font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">Déconnexion</button>
             </div>
           </div>
+         {user && user.subscriptionStatus !== 'actif' && (
+            <div className="mb-6 p-4 bg-yellow-100 text-yellow-800 border-l-4 border-yellow-400 rounded-lg shadow-md">
+              <p className="font-bold">Votre compte est limité ou votre abonnement a expiré.</p>
+              <p>
+                {/* LA CORRECTION EST ICI */}
+                Veuillez choisir un plan d&apos;abonnement pour débloquer toutes les fonctionnalités.
+                <Link href="/subscribe" className="font-semibold underline ml-2 hover:text-yellow-900">
+                  S&apos;abonner maintenant
+                </Link>
+              </p>
+            </div>
+          )}
           {message && (<div className={`mb-6 p-4 rounded-lg shadow-md animate-fade-in ${message.includes('✅') ? 'bg-green-100 text-green-800 border-l-4 border-green-400' : message.includes('❌') ? 'bg-red-100 text-red-800 border-l-4 border-red-400' : 'bg-blue-100 text-blue-800 border-l-4 border-blue-400'}`}><p className="font-medium">{message}</p></div>)}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
