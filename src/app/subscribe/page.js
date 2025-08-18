@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useAuth from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -16,6 +16,33 @@ export default function SubscribePage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [message, setMessage] = useState('');
 
+  // Ce useEffect est une manière plus robuste de vérifier que le script est chargé.
+  useEffect(() => {
+    // Si le script est déjà là, on met à jour l'état.
+    if (typeof window.kkiapay === 'function') {
+      console.log('✅ Kkiapay était déjà prêt.');
+      setKkiapayReady(true);
+      return;
+    }
+    // Sinon, on vérifie toutes les 100ms pendant quelques secondes.
+    let attempts = 0;
+    const interval = setInterval(() => {
+      if (typeof window.kkiapay === 'function') {
+        console.log('✅ Kkiapay est maintenant prêt !');
+        setKkiapayReady(true);
+        clearInterval(interval);
+      } else if (attempts > 50) { // On arrête après 5 secondes pour éviter une boucle infinie
+        console.error('❌ Le script Kkiapay n\'a pas pu être initialisé.');
+        setMessage('Service de paiement indisponible. Veuillez rafraîchir.');
+        clearInterval(interval);
+      }
+      attempts++;
+    }, 100);
+
+    // Nettoyage de l'intervalle si le composant est démonté
+    return () => clearInterval(interval);
+  }, []); // Le tableau vide signifie que ce code ne s'exécute qu'une seule fois au montage du composant.
+
   const plans = {
     mensuel: { name: 'Abonnement Mensuel', amount: 3000, duration: 30, description: 'par mois' },
     annuel: { name: 'Abonnement Annuel', amount: 30000, duration: 365, description: 'par an (Économisez 2 mois !)' },
@@ -23,7 +50,10 @@ export default function SubscribePage() {
 
   const getAuthHeaders = () => {
     const userInfoString = typeof window !== 'undefined' ? localStorage.getItem('userInfo') : null;
-    if (!userInfoString) { router.push('/login'); return {}; }
+    if (!userInfoString) { 
+      router.push('/login'); 
+      return {}; 
+    }
     const userInfo = JSON.parse(userInfoString);
     return { 'Content-Type': 'application/json', Authorization: `Bearer ${userInfo.token}` };
   };
@@ -43,21 +73,26 @@ export default function SubscribePage() {
         const updatedUserInfo = { ...JSON.parse(localStorage.getItem('userInfo')), ...data.user };
         localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
         router.push('/admin');
-      } else { throw new Error(data.message || 'La vérification du paiement a échoué.'); }
-    } catch (error) { setMessage(`❌ Erreur: ${error.message}`); } 
-    finally { setPaymentLoading(false); }
+      } else { 
+        throw new Error(data.message || 'La vérification du paiement a échoué.'); 
+      }
+    } catch (error) { 
+      setMessage(`❌ Erreur: ${error.message}`); 
+    } 
+    finally { 
+      setPaymentLoading(false); 
+    }
   };
 
   const openKkiapayWidget = () => {
-    // Log de débogage pour voir l'état exact au moment du clic
     console.log("--- Débogage du clic sur Payer ---");
     console.log("État de kkiapayReady :", kkiapayReady);
     console.log("Utilisateur (user) :", user);
     console.log("Type de window.kkiapay :", typeof window.kkiapay);
 
     if (kkiapayReady && user && typeof window.kkiapay === 'function') {
-      setPaymentLoading(true); // Indiquer que le processus de paiement commence
-      setMessage(''); // Effacer les anciens messages
+      setPaymentLoading(true);
+      setMessage('');
       window.kkiapay.open({
         amount: plans[selectedPlan].amount,
         key: process.env.NEXT_PUBLIC_KKIAPAY_PUBLIC_KEY,
@@ -70,7 +105,6 @@ export default function SubscribePage() {
         }
       });
     } else {
-      // Message d'erreur plus détaillé pour le débogage
       let errorMessage = "Service de paiement indisponible. ";
       if (!kkiapayReady) errorMessage += "Le script de paiement n'est pas prêt. ";
       if (!user) errorMessage += "Les informations utilisateur sont manquantes. ";
@@ -86,21 +120,15 @@ export default function SubscribePage() {
   
   return (
     <>
-      {/* === LA CORRECTION EST ICI === */}
       <Script 
         src="https://cdn.kkiapay.me/k.js" 
-        strategy="beforeInteractive" // On s'assure que le script est chargé très tôt
-        onReady={() => {
-          console.log('✅ Kkiapay Script est prêt !');
-          setKkiapayReady(true);
-        }}
+        strategy="beforeInteractive" // Stratégie de chargement robuste
         onError={(e) => {
           console.error('❌ Erreur de chargement du script Kkiapay :', e);
           setMessage('❌ Impossible de charger le service de paiement.');
         }}
       />
-      {/* ============================= */}
-
+      
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-100 flex items-center justify-center p-4">
         <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
           <Link href="/admin" className="text-indigo-600 hover:text-indigo-800 font-semibold mb-6 block">&larr; Retour au Dashboard</Link>
