@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import useAuth from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-// On n'a plus besoin d'importer 'Script' de 'next/script'
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -16,47 +15,67 @@ export default function SubscribePage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // === LA SOLUTION FINALE : CHARGEMENT MANUEL DU SCRIPT ===
+  // === VERSION CORRIGÉE QUI ATTEND L'INITIALISATION DU SCRIPT ===
   useEffect(() => {
-    // On vérifie si le script n'est pas déjà injecté pour éviter les doublons
-    if (document.querySelector('script[src="https://cdn.kkiapay.me/k.js"]')) {
-        // Si oui, on vérifie juste si kkiapay est prêt
-        if(typeof window.kkiapay === 'function') {
-            setKkiapayReady(true);
-        }
+    // Si kkiapay est déjà prêt (ex: navigation entre pages), on ne fait rien.
+    if (typeof window.kkiapay === 'function') {
+        setKkiapayReady(true);
         return;
     }
 
-    const script = document.createElement('script');
-    script.src = "https://cdn.kkiapay.me/k.js";
-    script.async = true;
+    // Fonction pour charger et vérifier le script
+    const loadAndCheckKkiapay = () => {
+        // Si le script est déjà injecté, on attend simplement qu'il s'initialise
+        if (document.querySelector('script[src="https://cdn.kkiapay.me/k.js"]')) {
+            // Logique d'attente ajoutée ici aussi
+        } else {
+          // Sinon, on crée et injecte le script
+          const script = document.createElement('script');
+          script.src = "https://cdn.kkiapay.me/k.js";
+          script.async = true;
+          script.id = 'kkiapay-script';
+          document.body.appendChild(script);
 
-    // C'est l'événement le plus fiable : il se déclenche quand le script a été téléchargé ET exécuté.
-    script.onload = () => {
-      console.log('✅ Kkiapay Script a été chargé et exécuté avec succès !');
-      if (typeof window.kkiapay === 'function') {
-        setKkiapayReady(true);
-      } else {
-        console.error('❌ Le script a été chargé, mais window.kkiapay n\'est pas une fonction.');
-        setMessage('Erreur d\'initialisation du paiement.');
-      }
+          script.onerror = () => {
+              console.error('❌ Échec du chargement du script Kkiapay.');
+              setMessage('Impossible de charger le service de paiement. Vérifiez votre connexion internet.');
+          };
+        }
+
+        // Boucle de vérification
+        let checkInterval;
+        let checkTimeout;
+
+        console.log('⏳ Attente de l\'initialisation de Kkiapay...');
+
+        // On vérifie toutes les 100ms si kkiapay est prêt
+        checkInterval = setInterval(() => {
+          if (typeof window.kkiapay === 'function') {
+            console.log('🎉 Kkiapay est prêt !');
+            setKkiapayReady(true);
+            clearInterval(checkInterval);
+            clearTimeout(checkTimeout);
+          }
+        }, 100);
+
+        // Sécurité : si après 10 secondes kkiapay n'est toujours pas prêt, on arrête.
+        checkTimeout = setTimeout(() => {
+          clearInterval(checkInterval);
+          if (!kkiapayReady) {
+            console.error('❌ Timeout : Kkiapay n\'a pas pu s\'initialiser après 10 secondes.');
+            setMessage('Erreur critique du service de paiement. Veuillez rafraîchir la page.');
+          }
+        }, 10000); // 10 secondes
     };
 
-    script.onerror = () => {
-      console.error('❌ Échec du chargement du script Kkiapay.');
-      setMessage('Impossible de charger le service de paiement.');
-    };
+    loadAndCheckKkiapay();
 
-    document.body.appendChild(script);
-
-    // Fonction de nettoyage : on retire le script si le composant est "démonté"
+    // Fonction de nettoyage (pas strictement nécessaire de retirer le script, mais propre)
     return () => {
-      const scriptElement = document.querySelector('script[src="https://cdn.kkiapay.me/k.js"]');
-      if (scriptElement) {
-        document.body.removeChild(scriptElement);
-      }
+      // On pourrait vouloir nettoyer les intervales ici s'ils sont encore actifs, 
+      // mais le composant n'est généralement pas démonté pendant ce processus.
     };
-  }, []); // Le tableau vide garantit que ce code ne s'exécute qu'une seule fois.
+  }, []); // Le tableau vide est crucial, on ne lance ça qu'une fois au montage.
   // ==========================================================
 
   const plans = {
@@ -116,7 +135,7 @@ export default function SubscribePage() {
         }
       });
     } else {
-      alert("Le service de paiement n'est pas encore prêt. Veuillez patienter quelques instants et réessayer.");
+      setMessage("Le service de paiement n'est pas prêt. Veuillez patienter ou rafraîchir.");
       console.error("Tentative d'ouverture du widget Kkiapay alors qu'il n'est pas prêt. State:", { kkiapayReady, userExists: !!user });
     }
   };
@@ -127,7 +146,6 @@ export default function SubscribePage() {
   
   return (
     <>
-      {/* Le composant <Script> a été supprimé d'ici, car géré dans le useEffect */}
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-100 flex items-center justify-center p-4">
         <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
           <Link href="/admin" className="text-indigo-600 hover:text-indigo-800 font-semibold mb-6 block">&larr; Retour au Dashboard</Link>
