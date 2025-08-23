@@ -15,68 +15,74 @@ export default function SubscribePage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // === VERSION CORRIGÉE QUI ATTEND L'INITIALISATION DU SCRIPT ===
+  // === VERSION AMÉLIORÉE ET ROBUSTE POUR CHARGER LE SCRIPT KKIAPAY ===
   useEffect(() => {
-    // Si kkiapay est déjà prêt (ex: navigation entre pages), on ne fait rien.
+    // Si la fonction kkiapay existe déjà (navigation rapide entre pages), on ne refait rien.
     if (typeof window.kkiapay === 'function') {
+        console.log('✅ Kkiapay est déjà initialisé.');
         setKkiapayReady(true);
         return;
     }
 
-    // Fonction pour charger et vérifier le script
-    const loadAndCheckKkiapay = () => {
-        // Si le script est déjà injecté, on attend simplement qu'il s'initialise
-        if (document.querySelector('script[src="https://cdn.kkiapay.me/k.js"]')) {
-            // Logique d'attente ajoutée ici aussi
-        } else {
-          // Sinon, on crée et injecte le script
-          const script = document.createElement('script');
-          script.src = "https://cdn.kkiapay.me/k.js";
-          script.async = true;
-          script.id = 'kkiapay-script';
-          document.body.appendChild(script);
+    // Sécurité: Si un script Kkiapay est déjà en train de charger, on ne l'ajoute pas une deuxième fois.
+    if (document.getElementById('kkiapay-script')) {
+        console.log('⏳ Le script Kkiapay est déjà en cours de chargement.');
+        return;
+    }
 
-          script.onerror = () => {
-              console.error('❌ Échec du chargement du script Kkiapay.');
-              setMessage('Impossible de charger le service de paiement. Vérifiez votre connexion internet.');
-          };
-        }
+    // --- Approche moderne avec les événements `onload` et `onerror` ---
+    
+    // 1. Création de l'élément script
+    const script = document.createElement('script');
+    script.id = 'kkiapay-script';
+    script.src = "https://cdn.kkiapay.me/k.js";
+    script.async = true;
 
-        // Boucle de vérification
-        let checkInterval;
-        let checkTimeout;
-
-        console.log('⏳ Attente de l\'initialisation de Kkiapay...');
-
-        // On vérifie toutes les 100ms si kkiapay est prêt
-        checkInterval = setInterval(() => {
-          if (typeof window.kkiapay === 'function') {
-            console.log('🎉 Kkiapay est prêt !');
+    // 2. Gestionnaire de succès (le script est chargé)
+    const handleLoad = () => {
+        clearTimeout(timeoutId); // Annuler le timeout de sécurité
+        if (typeof window.kkiapay === 'function') {
+            console.log('🎉 Kkiapay est prêt ! (via onload)');
             setKkiapayReady(true);
-            clearInterval(checkInterval);
-            clearTimeout(checkTimeout);
-          }
-        }, 100);
-
-        // Sécurité : si après 10 secondes kkiapay n'est toujours pas prêt, on arrête.
-        checkTimeout = setTimeout(() => {
-          clearInterval(checkInterval);
-          if (!kkiapayReady) {
-            console.error('❌ Timeout : Kkiapay n\'a pas pu s\'initialiser après 10 secondes.');
-            setMessage('Erreur critique du service de paiement. Veuillez rafraîchir la page.');
-          }
-        }, 10000); // 10 secondes
+        } else {
+            console.error('❌ Le script Kkiapay a été chargé mais `window.kkiapay` est introuvable.');
+            setMessage('Une erreur inattendue est survenue avec le service de paiement.');
+        }
     };
 
-    loadAndCheckKkiapay();
+    // 3. Gestionnaire d'échec (le script n'a pas pu charger : réseau, bloqueur de pub...)
+    const handleError = () => {
+        clearTimeout(timeoutId); // Annuler le timeout de sécurité
+        console.error('❌ Échec du chargement du script Kkiapay (via onerror).');
+        setMessage('Impossible de charger le service de paiement. Vérifiez votre connexion internet et désactivez les bloqueurs de scripts.');
+    };
 
-    // Fonction de nettoyage (pas strictement nécessaire de retirer le script, mais propre)
+    // 4. Timer de sécurité (au cas où ni 'load' ni 'error' ne se déclencheraient)
+    const timeoutId = setTimeout(() => {
+        // Nettoyer les listeners pour éviter qu'ils se déclenchent après le timeout
+        script.removeEventListener('load', handleLoad);
+        script.removeEventListener('error', handleError);
+        console.error('❌ Timeout : Le script Kkiapay n\'a pas répondu après 10 secondes.');
+        setMessage('Erreur critique du service de paiement. Veuillez rafraîchir la page.');
+    }, 10000);
+
+    // 5. Attacher les gestionnaires d'événements AU SCRIPT
+    script.addEventListener('load', handleLoad);
+    script.addEventListener('error', handleError);
+
+    // 6. Ajouter le script à la page pour démarrer le chargement
+    document.body.appendChild(script);
+
+    // 7. Fonction de nettoyage (très importante pour éviter les fuites de mémoire)
+    // S'exécute quand le composant est "démonté" (changement de page)
     return () => {
-      // On pourrait vouloir nettoyer les intervales ici s'ils sont encore actifs, 
-      // mais le composant n'est généralement pas démonté pendant ce processus.
+        console.log('Nettoyage du useEffect pour Kkiapay.');
+        clearTimeout(timeoutId);
+        script.removeEventListener('load', handleLoad);
+        script.removeEventListener('error', handleError);
     };
-  }, []); // Le tableau vide est crucial, on ne lance ça qu'une fois au montage.
-  // ==========================================================
+  }, []); // Le tableau vide [] est crucial, on ne lance ça qu'une seule fois au montage du composant.
+  // =====================================================================
 
   const plans = {
     mensuel: { name: 'Abonnement Mensuel', amount: 3000, duration: 30, description: 'par mois' },
