@@ -15,74 +15,64 @@ export default function SubscribePage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [message, setMessage] = useState('');
 
-  // === VERSION AMÉLIORÉE ET ROBUSTE POUR CHARGER LE SCRIPT KKIAPAY ===
+  // === VERSION AMÉLIORÉE AVEC GESTION DE RACE CONDITION ===
   useEffect(() => {
-    // Si la fonction kkiapay existe déjà (navigation rapide entre pages), on ne refait rien.
     if (typeof window.kkiapay === 'function') {
-        console.log('✅ Kkiapay est déjà initialisé.');
-        setKkiapayReady(true);
-        return;
+      console.log('✅ Kkiapay est déjà initialisé.');
+      setKkiapayReady(true);
+      return;
     }
 
-    // Sécurité: Si un script Kkiapay est déjà en train de charger, on ne l'ajoute pas une deuxième fois.
     if (document.getElementById('kkiapay-script')) {
-        console.log('⏳ Le script Kkiapay est déjà en cours de chargement.');
-        return;
+      return;
     }
-
-    // --- Approche moderne avec les événements `onload` et `onerror` ---
     
-    // 1. Création de l'élément script
     const script = document.createElement('script');
     script.id = 'kkiapay-script';
     script.src = "https://cdn.kkiapay.me/k.js";
     script.async = true;
 
-    // 2. Gestionnaire de succès (le script est chargé)
     const handleLoad = () => {
-        clearTimeout(timeoutId); // Annuler le timeout de sécurité
+      clearTimeout(timeoutId);
+      // AJOUT : On attend 100ms. Cela résout les rares cas où `load` se déclenche
+      // juste avant que le script ait fini de s'attacher à `window`.
+      setTimeout(() => {
         if (typeof window.kkiapay === 'function') {
-            console.log('🎉 Kkiapay est prêt ! (via onload)');
-            setKkiapayReady(true);
+          console.log('🎉 Kkiapay est prêt ! (via onload + délai)');
+          setKkiapayReady(true);
         } else {
-            console.error('❌ Le script Kkiapay a été chargé mais `window.kkiapay` est introuvable.');
-            setMessage('Une erreur inattendue est survenue avec le service de paiement.');
+          // C'est ici que votre erreur se déclenchait.
+          console.error("❌ Le script Kkiapay a été chargé mais 'window.kkiapay' est introuvable.");
+          setMessage("Une erreur inattendue est survenue avec le service de paiement. Essayez de rafraîchir la page.");
         }
+      }, 100); 
     };
 
-    // 3. Gestionnaire d'échec (le script n'a pas pu charger : réseau, bloqueur de pub...)
     const handleError = () => {
-        clearTimeout(timeoutId); // Annuler le timeout de sécurité
-        console.error('❌ Échec du chargement du script Kkiapay (via onerror).');
-        setMessage('Impossible de charger le service de paiement. Vérifiez votre connexion internet et désactivez les bloqueurs de scripts.');
+      clearTimeout(timeoutId);
+      console.error('❌ Échec du chargement du script Kkiapay (via onerror).');
+      setMessage('Impossible de charger le service de paiement. Vérifiez votre connexion internet et désactivez les bloqueurs de scripts.');
     };
 
-    // 4. Timer de sécurité (au cas où ni 'load' ni 'error' ne se déclencheraient)
     const timeoutId = setTimeout(() => {
-        // Nettoyer les listeners pour éviter qu'ils se déclenchent après le timeout
-        script.removeEventListener('load', handleLoad);
-        script.removeEventListener('error', handleError);
-        console.error('❌ Timeout : Le script Kkiapay n\'a pas répondu après 10 secondes.');
-        setMessage('Erreur critique du service de paiement. Veuillez rafraîchir la page.');
+      script.removeEventListener('load', handleLoad);
+      script.removeEventListener('error', handleError);
+      console.error('❌ Timeout : Le script Kkiapay n\'a pas répondu après 10 secondes.');
+      setMessage('Erreur critique du service de paiement. Veuillez rafraîchir la page.');
     }, 10000);
 
-    // 5. Attacher les gestionnaires d'événements AU SCRIPT
     script.addEventListener('load', handleLoad);
     script.addEventListener('error', handleError);
-
-    // 6. Ajouter le script à la page pour démarrer le chargement
     document.body.appendChild(script);
 
-    // 7. Fonction de nettoyage (très importante pour éviter les fuites de mémoire)
-    // S'exécute quand le composant est "démonté" (changement de page)
     return () => {
-        console.log('Nettoyage du useEffect pour Kkiapay.');
-        clearTimeout(timeoutId);
-        script.removeEventListener('load', handleLoad);
-        script.removeEventListener('error', handleError);
+      clearTimeout(timeoutId);
+      script.removeEventListener('load', handleLoad);
+      script.removeEventListener('error', handleError);
     };
-  }, []); // Le tableau vide [] est crucial, on ne lance ça qu'une seule fois au montage du composant.
-  // =====================================================================
+  }, []);
+
+  // ... (Le reste de votre code reste identique)
 
   const plans = {
     mensuel: { name: 'Abonnement Mensuel', amount: 3000, duration: 30, description: 'par mois' },
