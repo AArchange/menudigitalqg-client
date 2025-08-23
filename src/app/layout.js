@@ -1,15 +1,8 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import Script from 'next/script'; // <-- 1. IMPORTER
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Create Next App",
@@ -19,10 +12,16 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={inter.className}>
         {children}
+
+        {/* 2. AJOUTER LE SCRIPT KKIAPAY ICI */}
+        {/* 'beforeInteractive' garantit que le script est prêt avant que la page devienne interactive */}
+        <Script
+          src="https://cdn.kkiapay.me/k.js"
+          strategy="beforeInteractive"
+          id="kkiapay-script-layout"
+        />
       </body>
     </html>
   );
